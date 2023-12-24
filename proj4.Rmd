@@ -1,0 +1,708 @@
+---
+title: "Dashboard- Project 4 "
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    runtime: shiny
+    resource_files:
+    - data/waPct1.csv
+    - data/waPct2.csv
+    - data/waPct3.csv
+    - data/waPct4.csv
+---
+
+<!-- runtime: shiny -->
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(DT)
+library(leaflet)
+library(sf)
+library(shiny)
+library(shinydashboard)
+```
+
+```{r global, include= FALSE}
+library(tidyverse)
+library(jsonlite)
+library(httr) 
+library(tidycensus)
+
+census_api_key("66639372b5017bef5c5989cea48d8e4b38bfd730")
+
+# This looks at the 5 year estimates
+# You can also do "acs1"
+vars <- load_variables(year = 2021,
+                      dataset = "acs5",
+                      cache = TRUE)
+
+
+resultfunc=function(x,y){
+  lett=as.data.frame(x)[,c(1,3:4)]%>%
+  spread(variable, estimate)%>%
+  mutate(checkTot = white+af.am+hispanic+am.ind+
+           asian+nh.pi+multiple+other)%>%
+  mutate(pct.white = white/checkTot,
+         pct.af.am = af.am/checkTot,
+         pct.hispanic = hispanic/checkTot,
+         pct.am.ind = am.ind/checkTot,
+         pct.asian = asian/checkTot,
+         pct.nh.pi = nh.pi/checkTot,
+         pct.multiple = multiple/checkTot, 
+         pct.other = other/checkTot, 
+         year = y)
+return(lett)
+  }
+
+# Extract data
+md1 <- get_acs(geography = "county", variables = c(population = "B02001_001",
+                                median.gross.rent = "B25064_001",
+                                median.household.income = "B19013_001",
+                                rent.burden = "B25071_001",
+                                white = "B03002_003", 
+                                af.am = "B03002_004",
+                                hispanic = "B03002_012",
+                                am.ind = "B03002_005",
+                                asian = "B03002_006",
+                                nh.pi = "B03002_007",
+                                multiple = "B03002_009",
+                                other = "B03002_008"),
+              state = "MD",
+              year = 2021)
+
+
+
+waPct1<-resultfunc(md1,2021)
+
+
+md2 <- get_acs(geography = "county", variables = c(population = "B02001_001",
+                                median.gross.rent = "B25064_001",
+                                median.household.income = "B19013_001",
+                                rent.burden = "B25071_001",
+                                white = "B03002_003", 
+                                af.am = "B03002_004",
+                                hispanic = "B03002_012",
+                                am.ind = "B03002_005",
+                                asian = "B03002_006",
+                                nh.pi = "B03002_007",
+                                multiple = "B03002_009",
+                                other = "B03002_008"),
+               state = "MD",
+               year = 2022)
+
+waPct2<-resultfunc(md2,2022)
+
+
+pa1 <- get_acs(geography = "county",variables = c(population = "B02001_001",
+                                median.gross.rent = "B25064_001",
+                                median.household.income = "B19013_001",
+                                rent.burden = "B25071_001",
+                                white = "B03002_003", 
+                                af.am = "B03002_004",
+                                hispanic = "B03002_012",
+                                am.ind = "B03002_005",
+                                asian = "B03002_006",
+                                nh.pi = "B03002_007",
+                                multiple = "B03002_009",
+                                other = "B03002_008"),
+              state = "PA",
+              year = 2021)
+
+waPct3<-resultfunc(pa1,2021)
+
+
+va1 <- get_acs(geography = "county", variables = c(population = "B02001_001",
+                                median.gross.rent = "B25064_001",
+                                median.household.income = "B19013_001",
+                                rent.burden = "B25071_001",
+                                white = "B03002_003", 
+                                af.am = "B03002_004",
+                                hispanic = "B03002_012",
+                                am.ind = "B03002_005",
+                                asian = "B03002_006",
+                                nh.pi = "B03002_007",
+                                multiple = "B03002_009",
+                                other = "B03002_008"),
+              state = "VA",
+              year = 2021)
+
+waPct4<-resultfunc(va1,2021)
+
+
+# Load necessary libraries and set options
+library(fs)  # For file system operations
+
+# Function to check and create directory if not exists
+create_data_directory <- function() {
+  data_dir <- "data"
+  
+  if (!dir_exists(data_dir)) {
+    dir_create(data_dir)
+    cat("Data directory created.\n")
+  } else {
+    cat("Data directory already exists.\n")
+  }
+}
+
+# Function to save data
+save_data <- function(data1) {
+  data_len=deparse(substitute(data1))
+  data_file=paste("data/",data_len,".csv",sep="")
+  write.csv(data1, data_file, row.names = FALSE)
+  cat("Data saved to", data_file, "\n")
+}
+
+# Function to read data
+read_data <- function(data1) {
+  data_len=deparse(substitute(data1))
+  data_file=paste("data/",data_len,".csv",sep="")
+  
+  if (file_exists(data_file)) {
+    data <- read.csv(data_file)
+    cat("Data read from", data_file, "\n")
+    return(data)
+  } else {
+    cat("Data file not found. Please save the data first.\n")
+    return(NULL)
+  }
+}
+
+
+
+create_data_directory()
+
+
+if (!file.exists("data/waPct4.csv")) {
+  save_data(waPct4)
+} else {
+  waPct4 <- read_data(waPct4)
+}
+
+if (!file.exists("data/waPct3.csv")) {
+  save_data(waPct3)
+} else {
+  waPct3 <- read_data(waPct3)
+}
+
+if (!file.exists("data/waPct2.csv")) {
+  save_data(waPct2)
+} else {
+  waPct2 <- read_data(waPct2)
+}
+
+if (!file.exists("data/waPct1.csv")) {
+  save_data(waPct1)
+} else {
+  waPct1 <- read_data(waPct1)
+}
+```
+
+# About
+
+## Column 
+
+The project involves analyzing and comparing the socioeconomic dynamics related to housing in Maryland, Philadelphia and Virginia. The dataset includes information on median gross rent, median household income, population, and rent burden for various counties or areas within these regions. The project aims to understand the correlation between key variables, particularly focusing on the relationship between social and economic factors.
+
+To facilitate a comprehensive understanding of the data, a dashboard is being developed. The dashboard will feature visualizations, such as plots and trend lines, to showcase how the variables interact. The unique identifiers assigned to Maryland and Philadelphia allow for a direct comparison within the same visual representation.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/eyHY0iza0Zo?si=nQ1erT83HTvEFRxO" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+The purpose of the dashboard is multi-faceted:
+
+1) Correlation Analysis:
+
+The primary goal is to visually assess and compare the correlation between median gross rent and median household income in Maryland, Pennsylvania and Virginia. Insights gained from these comparisons can help identify patterns and trends that may be indicative of broader economic dynamics.
+
+2) Regional Disparities:
+
+The dashboard aids in identifying regional disparities within Maryland, providing a nuanced understanding of how housing-related variables vary across different counties or areas.
+
+3) Decision Support:
+
+The visualizations generated by the dashboard serve as a decision support tool for policymakers, urban planners, or stakeholders involved in housing and economic development. The insights derived can inform strategies for addressing housing affordability concerns and fostering economic growth.
+
+4) Comparative Analysis:
+
+By directly comparing Maryland and Philadelphia, the dashboard enables a comparative analysis of housing and income dynamics between the two regions. This comparison can highlight similarities, differences, and potential factors influencing these trends.
+
+In summary, the project aims to provide actionable insights into the relationship between housing and income in Maryland and Philadelphia through the development of an interactive dashboard. This tool will not only enhance understanding but also support informed decision-making for stakeholders concerned with regional economic development and housing policies.
+
+Data Source
+
+The data is found in tidycensus.
+
+
+# Data
+
+Tidycensus is an R package that facilitates the retrieval and analysis of U.S. Census Bureau data in a tidy, user-friendly format. Developed by Kyle Walker, this package streamlines the process of accessing demographic and socioeconomic data from various census sources, making it easier for researchers, analysts, and data scientists to work with the extensive datasets provided by the U.S. Census Bureau. Tidycensus simplifies data extraction, ensuring that users can easily incorporate census information into their analytical workflows. By structuring the data in a tidy format, the package integrates seamlessly with the broader ecosystem of tidyverse packages, enabling efficient data manipulation and visualization. This tool is particularly valuable for those who seek to explore and understand demographic trends, social patterns, and geographic variations across different regions in the United States.
+
+We use the get_acs function to obtain data and feature geometry for the American Community Survey. The variables selected us are:- 1) population = "B02001_001", 2) median.gross.rent = "B25064_001", 3) median.household.income = "B19013_001", 4) rent.burden = "B25071_001", 5) white = "B03002_003", 6) af.am = "B03002_004", 7) hispanic = "B03002_012", 8) am.ind = "B03002_005", 9) asian = "B03002_006", 10)nh.pi = "B03002_007", 11)multiple = "B03002_009", 12)other = "B03002_008".
+
+## Dataset Table
+```{r}
+# # Load your dataset (replace 'md_counties.csv' with your actual dataset file)
+ your_data <- waPct1
+# # Display the first few rows of the dataset
+# kable(head([,1:7]))
+DT::renderDataTable({
+  DT::datatable(your_data,
+                rownames = F,
+                caption = htmltools::tags$caption(
+                  style = 'caption-side: top; text-align: Left;'),
+                options = list(autoWidth = TRUE,
+                               pageLength = 10,
+                               scroller = TRUE,
+                               scrollY = '450px'))
+})
+```
+
+# Interactive Plots Maryland
+
+Welcome to our interactive data exploration page! On this page, we present a dynamic slider that offers a comprehensive analysis of Maryland's demographic landscape. Through this interactive tool, users can seamlessly navigate and observe histograms depicting two pivotal variables: Population and Gross Rent. The slider enables users to dynamically explore the distribution of population counts across Maryland's counties, providing insights into the varying sizes of communities. Additionally, by adjusting the slider, users can delve into the histogram of median gross rent values, gaining valuable perspectives on the diverse rental landscapes within the state. This interactive feature empowers users to uncover patterns, trends, and outliers, fostering a nuanced understanding of Maryland's population dynamics and housing characteristics. Enjoy the exploration as you slide through the data and unravel the unique story woven by the histograms of Population and Gross Rent.
+
+```{r }
+md_counties <- waPct1
+
+ui <- fluidPage(
+  titlePanel("Maryland Counties Dashboard"),
+
+  sidebarLayout(
+    sidebarPanel(
+      h4("Filter by Population Range"),
+      sliderInput("pop_slider", "Population Range", min = 0, max = max(md_counties$population), value = c(0, max(md_counties$population))),
+
+    ),
+
+    mainPanel(
+      tabsetPanel(
+        tabPanel("Population", plotOutput("pop_plot")),
+        tabPanel("Median Gross Rent", plotOutput("rent_plot")),
+
+      )
+    )
+  )
+)
+
+server <- function(input, output) {
+
+  # Create a reactive subset of data based on population range
+  filtered_data <- reactive({
+    filter(md_counties, population >= input$pop_slider[1] & population <= input$pop_slider[2])
+  })
+
+  # Create plots for population variable
+  output$pop_plot <- renderPlot({
+    ggplot(filtered_data(), aes(x = population)) +
+      geom_histogram(binwidth = 200000, fill = "skyblue", color = "black", alpha = 0.7) +
+      labs(title = "Population Distribution", x = "Population", y = "Count")
+  })
+
+  # Create plots for median gross rent variable
+  output$rent_plot <- renderPlot({
+    ggplot(filtered_data(), aes(x = median.gross.rent)) +
+      geom_histogram(binwidth = 200, fill = "salmon", color = "black", alpha = 0.7) +
+      labs(title = "Median Gross Rent Distribution", x = "Median Gross Rent", y = "Count")
+  })
+
+  # Add similar renderPlot functions for other variables
+}
+
+shinyApp(ui, server)
+
+
+
+```
+
+# Interactive Plot Maryland 2
+
+Welcome to our interactive data exploration page! Here, we present a comprehensive overview that dynamically captures the essence of Maryland's counties. Through an interactive interface, users can seamlessly navigate and analyze the values of all variables across the entire spectrum of Maryland counties. This feature allows for a holistic examination of key demographic indicators, including Population, Median Gross Rent, Median Household Income, Rent Burden, and various racial demographics. By interacting with the user-friendly interface, you can gain valuable insights into the socio-economic fabric of each county, discerning patterns, disparities, and unique characteristics. Dive into this immersive experience to unravel the rich tapestry of Maryland's diverse communities and gain a nuanced understanding of the multifaceted variables that shape the state's demographic landscape.
+
+```{r}
+library(shiny)
+library(tidyverse)
+library(plotly)
+
+ui <- fluidPage(
+  titlePanel("Maryland Counties Dashboard"),
+
+  sidebarLayout(
+    sidebarPanel(
+      h4("Select Variable"),
+      selectInput("variable", "Choose a Variable", choices = colnames(md_counties)[2:13]),
+      width = 3
+    ),
+
+    mainPanel(
+      plotlyOutput("variable_plot"),
+      width = 9
+    )
+  )
+)
+
+server <- function(input, output) {
+
+  # Create reactive subset of data based on selected variable
+  variable_data <- reactive({
+    select(md_counties, GEOID, input$variable)
+  })
+
+  # Render plot based on selected variable
+  output$variable_plot <- renderPlotly({
+    plot_ly(data = variable_data(), x = ~GEOID, y = ~get(input$variable), type = "bar") %>%
+      layout(title = paste("Plot of", input$variable),
+             xaxis = list(title = "County-GEOID"),
+             yaxis = list(title = input$variable))
+  })
+}
+
+shinyApp(ui, server)
+
+```
+
+# Static Tab 1
+
+Welcome to our static data snapshot, where we delve into a detailed examination of Maryland's counties, focusing specifically on the demographic landscape shaped by ethnicity. This page provides a fixed presentation, offering insights into the number of people within each county categorized by racial demographics. As you explore the static content, you will gain a nuanced understanding of the racial composition across the state. Discover the diversity that defines Maryland, unveiling the distribution of White, African American, Hispanic and Asian. This snapshot serves as a foundational exploration, allowing you to observe and appreciate the unique tapestry of communities contributing to Maryland's cultural richness. Immerse yourself in the exploration of population dynamics, acknowledging the significance of racial diversity in shaping the social fabric of each county within the state.
+
+```{r}
+library(shiny)
+library(shinydashboard)
+
+ui <- dashboardPage(
+  dashboardHeader(title = "Distribution of Populations(based on ethnicity)"),
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem("Page 1", tabName = "page1", icon = icon("dashboard"))
+    )
+  ),
+  dashboardBody(
+    tabItems(
+      tabItem(
+        tabName = "page1",
+        h2("Population Distribution(based on ethnicity)"),
+
+        # Additional tabs within Page 1
+        tabsetPanel(
+          tabPanel("Tab 1A",
+                   fluidRow(
+                     box(
+                       title = "Asian Population",
+                       plotOutput("asian_plot_tab1a")
+                     ),
+                     box(
+                       title = "African American Population",
+                       plotOutput("black_plot_tab1a")
+                     )
+                     # Add more boxes for other variables
+                   )
+          ),
+
+          tabPanel("Tab 1B",
+                   fluidRow(
+                     box(
+                       title = "White Population",
+                       plotOutput("white_plot_tab1b")
+                     ),
+                     box(
+                       title = "Hispanic Population",
+                       plotOutput("hispanic_plot_tab1b")
+                     )
+                     # Add more boxes for other variables
+                   )
+          )
+
+          # Add more tabs as needed
+        )
+      )
+    )
+  )
+)
+
+server <- function(input, output) {
+  # Replace "md_counties" with the actual variable containing your Maryland counties data
+  # For example, md_counties <- readRDS("your_data.rds")
+
+  output$asian_plot_tab1a <- renderPlot({
+    ggplot(md_counties, aes(x = asian)) +
+      geom_histogram(binwidth = 2000, fill = "lightcoral", color = "black", alpha = 0.7) +
+      labs(title = "Asian Population Distribution", x = "Asian Population", y = "Count")
+  })
+
+  # Example plots based on your provided variables
+  output$black_plot_tab1a <- renderPlot({
+    ggplot(md_counties, aes(x = af.am)) +
+      geom_histogram(binwidth = 2000, fill = "lightgreen", color = "black", alpha = 0.7) +
+      labs(title = "African American Population Distribution", x = "African American Population", y = "Count")
+  })
+
+  output$white_plot_tab1b <- renderPlot({
+    ggplot(md_counties, aes(x = white)) +
+      geom_histogram(binwidth = 2000, fill = "lightgreen", color = "black", alpha = 0.7) +
+      labs(title = "White Population Distribution", x = "White Population", y = "Count")
+  })
+
+  output$hispanic_plot_tab1b <- renderPlot({
+    ggplot(md_counties, aes(x = hispanic)) +
+      geom_histogram(binwidth = 2000, fill = "lightcoral", color = "black", alpha = 0.7) +
+      labs(title = "Hispanic Population Distribution", x = "Hispanic Population", y = "Count")
+  })
+
+  # Add similar renderPlot functions for other variables
+}
+
+shinyApp(ui, server)
+
+
+```
+# Static Tab 2
+
+
+Welcome to our static data snapshot, a dedicated space where we turn our attention to the examination of median income across three distinctive states: Maryland (MD), Pennsylvania (PA), and Virginia (VA). In this page, you will encounter a fixed presentation that illuminates the economic landscape, showcasing the median household income as a key metric. As you delve into the static content, a comprehensive overview unfolds, providing insights into the variations and disparities in median income levels among these states. Explore the nuances that define each region's economic prosperity, gaining a deeper understanding of how median income contributes to the unique socio-economic character of Maryland, Pennsylvania, and Virginia. This snapshot serves as a foundational exploration, offering a glimpse into the diverse economic profiles that shape these states, contributing to a broader comprehension of their respective economic landscapes.
+
+```{r}
+library(shiny)
+library(shinydashboard)
+library(ggplot2)
+
+md_counties <- waPct1
+pa_counties <- waPct3
+va_counties <- waPct4
+
+ui <- dashboardPage(
+  dashboardHeader(title = "Median Income across states"),
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem("Page 1", tabName = "page1", icon = icon("dashboard"))
+    )
+  ),
+  dashboardBody(
+    tabItems(
+      tabItem(
+        tabName = "page1",
+        h2("Median Income across MD, PA and VA"),
+
+        # Additional tabs within Page 1
+
+                   fluidRow(
+                     box(
+                       title = "Maryland ",
+                       plotOutput("mary_plot_tab1a")
+                     ),
+                     box(
+                       title = "Pennsylvania",
+                       plotOutput("penn_plot_tab1a")
+                     ),
+                     box(
+                       title = "Virginia",
+                       plotOutput("virg_plot_tab1a")
+                     )
+                     # Add more boxes for other variables
+                   )
+      )
+    )
+  )
+)
+
+server <- function(input, output) {
+  # Replace "md_counties" with the actual variable containing your Maryland counties data
+  # For example, md_counties <- readRDS("your_data.rds")
+
+  output$mary_plot_tab1a <- renderPlot({
+    ggplot(md_counties, aes(x = 1, y = median.household.income)) +
+      geom_boxplot(fill = "skyblue") +
+      labs(title = "Median Household Income in Maryland", x = NULL, y = "Income")
+  })
+
+  # Example plots based on your provided variables
+  output$penn_plot_tab1a <- renderPlot({
+     ggplot(pa_counties, aes(x = 1, y = median.household.income)) +
+      geom_boxplot(fill = "salmon") +
+      labs(title = "Median Household Income in Pennsylvania", x = NULL, y = "Income")
+  })
+
+  output$virg_plot_tab1a <- renderPlot({
+    ggplot(va_counties, aes(x = 1, y = median.household.income)) +
+      geom_boxplot(fill = "lightgreen") +
+      labs(title = "Median Household Income in Virginia", x = NULL, y = "Income")
+  })
+
+  # Add similar renderPlot functions for other variables
+}
+
+shinyApp(ui, server)
+
+
+```
+
+
+
+# Example Analysis
+
+## Column
+
+The API I use is tidycensus (https://walker-data.com/tidycensus), which is an R package that allows users to interface with a select number of the US Census Bureau’s data APIs and return tidyverse-ready data frames, optionally with simple feature geometry included.
+
+The goal of this part is to create a data analysis (or a case study) using the US Census Bureau’s data.
+
+As part of this analysis, we look at the 3 states Philadelphia, Virginia and Maryland, and understand patterns in median gross rent, median household income, rent burden.
+
+
+```{r Data Visualization, include= FALSE}
+
+#read the dataset
+library(dplyr)
+library(lubridate, warn.conflicts = FALSE)
+library(forcats)
+library(tidyr)
+
+# We summarise the data and get a glimpse of the data set using the two functions below respectively.
+summarise(waPct1)
+glimpse(waPct1)
+
+#This functions counts the numbers of unique value corresponding to the dataset, and it helps us understand the presence of any repetitions.
+count(waPct1)
+
+#We use the distinct function to find distinct value in the data, and convert the data structure to tibble for better operationality.
+my_data_new1=distinct(waPct1)
+my_data_new1=as_tibble(my_data_new1)
+my_data_new1=arrange(my_data_new1)
+
+# We summarise the data and get a glimpse of the data set using the two functions below respectively.
+summarise(waPct2)
+glimpse(waPct2)
+
+#This functions counts the numbers of unique value corresponding to the dataset, and it helps us understand the presence of any repetitions.
+count(waPct2)
+
+#We use the distinct function to find distinct value in the data, and convert the data structure to tibble for better operationality.
+my_data_new2=distinct(waPct2)
+my_data_new2=as_tibble(my_data_new2)
+my_data_new2=arrange(my_data_new2)
+
+# We summarise the data and get a glimpse of the data set using the two functions below respectively.
+summarise(waPct3)
+glimpse(waPct3)
+
+#This functions counts the numbers of unique value corresponding to the dataset, and it helps us understand the presence of any repetitions.
+count(waPct3)
+
+#We use the distinct function to find distinct value in the data, and convert the data structure to tibble for better operationality.
+my_data_new3=distinct(waPct3)
+my_data_new3=as_tibble(my_data_new3)
+my_data_new3=arrange(my_data_new3)
+
+# We summarise the data and get a glimpse of the data set using the two functions below respectively.
+summarise(waPct4)
+glimpse(waPct4)
+
+#This functions counts the numbers of unique value corresponding to the dataset, and it helps us understand the presence of any repetitions.
+count(waPct4)
+
+#We use the distinct function to find distinct value in the data, and convert the data structure to tibble for better operationality.
+my_data_new4=distinct(waPct4)
+my_data_new4=as_tibble(my_data_new4)
+my_data_new4=arrange(my_data_new4)
+
+#We also find the current time to be able to understand the date till which the analysis is valid. The analysis might not be valid at a future date.
+Sys.timezone()
+
+now(tzone = "America/New_York")
+```
+
+<!-- We now use Purr to simultaneously apply functions to vectors. -->
+
+```{r purrr, message = FALSE, warning = FALSE, echo= FALSE, include= FALSE}
+library(purrr)
+vec_req <- as.numeric(my_data_new1$median.gross.rent)
+result <- map_int(vec_req, ~as.numeric((. - min(vec_req)) / (max(vec_req) - min(vec_req))>0.5))
+#We scale the rent to (0,1) and check if it is on the higher end or the lower end
+result
+
+#We find the average of the median rent in Maryland over 2021-22
+collected=cbind(my_data_new2$median.gross.rent,my_data_new1$median.gross.rent)
+#We convert all the uppercase names of the directors to lower case.
+mean_rent <- map_dbl(collected, mean)
+mean_rent
+```
+
+The ggplot visualization for Maryland in 2021, comparing median gross rent to median household income, reveals a positive correlation. The graph indicates that as median gross rent rises, median household income tends to increase as well. This suggests a socioeconomic relationship where areas with higher housing costs also exhibit higher income levels.
+
+```{r}
+ggplot(my_data_new1, aes(x = median.gross.rent, y = median.household.income, group=1)) +
+  geom_point() +  geom_line() +
+  labs(
+    title = "median.gross.rent vs median.household.income",
+    subtitle = "For Maryland 2021",
+    caption = "Data source: TidyCensus"
+  )
+
+```
+
+The ggplot visualization for Maryland in 2021, depicting the relationship between county population and rent burden, shows a flat graph with initial perturbations. The absence of a clear trend indicates no discernible correlation between population and rent burden across the counties. The graph suggests that variations in population size do not consistently correspond to variations in rent burden.
+
+```{r}
+
+ggplot(my_data_new1, aes(x = population, y = rent.burden, group=1)) +
+  geom_point() +  geom_line() +
+  labs(
+    title = "Population vs rent.burden",
+    subtitle = "For Maryland 2021",
+    caption = "Data source: TidyCensus"
+  )
+
+
+```
+
+The provided R code prepares and combines datasets for Maryland, Philadelphia and Virginia, assigning unique identifiers (1, 2 and 3). The resulting ggplot visualization compares median gross rent to median household income for both regions. The graphs show similar increasing trends, suggesting a strong positive correlation in both Maryland and Philadelphia. This implies that as median gross rent rises, median household income tends to increase, reflecting a common economic trend across the two locations.
+
+```{r}
+my_data_new11=my_data_new1
+my_data_new11[,8]=1
+my_data_new21=my_data_new3
+my_data_new21[,8]=2
+my_data_new31=my_data_new4
+my_data_new31[,8]=3
+my_data_new13=rbind(my_data_new11[,6:8],my_data_new21[,6:8], my_data_new31[,6:8])
+ggplot(my_data_new13, aes(x = median.gross.rent, y = median.household.income, group=1)) + facet_wrap(~multiple)+
+  geom_point() +  geom_line() +
+  labs(
+    title = "median.gross.rent vs median.household.income",
+    subtitle = "Comparing Maryland, Philadelphia and Virginia",
+    caption = "Data source: TidyCensus"
+  )
+
+```
+
+Finally we look at the income of Asian population in all the three states. We find that the income in Maryland is marginally greater than that in Philadelphia and Virginia.
+
+```{r}
+my_data_new11=my_data_new1
+my_data_new11[,8]=1
+my_data_new21=my_data_new3
+my_data_new21[,8]=2
+my_data_new31=my_data_new4
+my_data_new31[,8]=3
+my_data_new13=as.data.frame(rbind(my_data_new11[,c(4,8)],my_data_new21[,c(4,8)], my_data_new31[,c(4,8)]))
+my_data_new13[,2]=as.factor(my_data_new13[,2])
+my_data_new13[,1]=log(my_data_new13[,1])
+ggplot(my_data_new13, aes(x= multiple, y = asian))+
+  geom_boxplot() +
+  labs(
+    title = "Asian income across states",
+    subtitle = "Comparing Maryland, Philadelphia and Virginia",
+    caption = "Data source: TidyCensus"
+  )
+
+
+```
+
+
+We note the similarities in the behavior of rent and income across states. The analysis done on three states show the inequities which are present across various states.
+
+
+
+
+

@@ -1,0 +1,10 @@
+name: project-4-anagh
+title:
+username: proj4anagh
+account: proj4anagh
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 10843207
+bundleId: 8080391
+url: https://proj4anagh.shinyapps.io/project-4-anagh/
+version: 1
