@@ -2,10 +2,6 @@ The project involves analyzing and comparing the socioeconomic dynamics related 
 
 To facilitate a comprehensive understanding of the data, a dashboard is being developed. The dashboard will feature visualizations, such as plots and trend lines, to showcase how the variables interact. The unique identifiers assigned to Maryland and Philadelphia allow for a direct comparison within the same visual representation.
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/eyHY0iza0Zo?si=nQ1erT83HTvEFRxO" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-
-The purpose of the dashboard is multi-faceted:
-
 1) Correlation Analysis:
 
 The primary goal is to visually assess and compare the correlation between median gross rent and median household income in Maryland, Pennsylvania and Virginia. Insights gained from these comparisons can help identify patterns and trends that may be indicative of broader economic dynamics.
